@@ -50,7 +50,6 @@ int main(int argc, char *argv[]){
 	float dist, temp;
 	SDL_Event e;
 	int exit = 0;
-	int next_step = 1;
 	while (!exit){
 		SDL_PollEvent(&e);
 		switch(e.type){
@@ -58,9 +57,6 @@ int main(int argc, char *argv[]){
 				switch(e.key.keysym.sym){
 					case SDLK_ESCAPE:
 						exit = 1;
-						break;
-					case SDLK_SPACE:
-						next_step = 1;
 						break;
 				}
 				break;
@@ -71,48 +67,45 @@ int main(int argc, char *argv[]){
 				break;
 		}
 
-		if (next_step == 1){
-			// Clear screen
-			SDL_FillRect(ws, NULL, 0xFF000000);
+		// Clear screen
+		SDL_FillRect(ws, NULL, 0xFF000000);
 
-			// Draw Bezier lines
-			for (i = 0; i < 2; i++){
-				bezier_DrawLine(ws, b[i], b[i + 1], 0xFFFF0000);
-			}
-			// Draw Bezier dot
-			for (i = 0; i < bezier_size; i++){
-				print_Bezier(b[i], i);
-				bezier_DrawDot(ws, b[i], 0xFFFFFFFF);
-			}
-
-			// Get longest distance to use to normalize the next step
-			dist = 0;
-			temp = 0;
-			for (i = 0; i < bezier_size; i++){
-				if (!b[i]->locked && b[i]->parent[0] && b[i]->parent[1]){
-					temp = sqrt(pow((b[i]->parent[1]->p.x - b[i]->parent[0]->p.x), 2) +
-								pow((b[i]->parent[1]->p.y - b[i]->parent[0]->p.y), 2));
-					if (dist < temp)
-						dist = temp;
-				}
-			}
-
-			// Update Bezier
-			for (i = 0; i < bezier_size; i++){
-				bezier_UpdatePoint(b[i], dist);
-				bezier_CheckPointToEnd(b[i]);
-			}
-			// Get linear equation and direction after update
-			for (i = 0; i < bezier_size; i++){
-				bezier_GetLinearEquation(b[i]);
-				bezier_GetDirection(b[i]);
-			}
-
-			// Update window
-			SDL_UpdateWindowSurface(w);
-
-			next_step = 0;
+		// Draw Bezier lines
+		for (i = 0; i < 2; i++){
+			bezier_DrawLine(ws, b[i], b[i + 1], 0xFFFF0000);
 		}
+		// Draw Bezier dot
+		for (i = 0; i < bezier_size; i++){
+			print_Bezier(b[i], i);
+			bezier_DrawDot(ws, b[i], 0xFFFFFFFF);
+		}
+
+		// Get longest distance to use to normalize the next step
+		dist = 0;
+		temp = 0;
+		for (i = 0; i < bezier_size; i++){
+			if (!b[i]->locked && b[i]->parent[0] && b[i]->parent[1]){
+				temp = sqrt(pow((b[i]->parent[1]->p.x - b[i]->parent[0]->p.x), 2) +
+							pow((b[i]->parent[1]->p.y - b[i]->parent[0]->p.y), 2));
+				if (dist < temp)
+					dist = temp;
+			}
+		}
+
+		// Update Bezier
+		for (i = 0; i < bezier_size; i++){
+			bezier_UpdatePoint(b[i], dist);
+			bezier_CheckPointToEnd(b[i]);
+		}
+		// Get linear equation and direction after update
+		for (i = 0; i < bezier_size; i++){
+			bezier_GetLinearEquation(b[i]);
+			bezier_GetDirection(b[i]);
+		}
+
+		// Update window
+		SDL_UpdateWindowSurface(w);
+
 		SDL_Delay(100);
 	}
 
