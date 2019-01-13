@@ -7,7 +7,7 @@
 #define BG_COLOR (0xFF000000)
 
 /// Bezier Curve
-// https://imgur.com/uthlITr
+// https://media.giphy.com/media/9Pi3Ad2EyzF3JKVcSa/giphy.gif
 
 void print_Bezier(Bezier *b, uint8_t index){
 	char dir[5][8] = {"NONE", "DOWN", "UP", "RIGHT", "LEFT"};
