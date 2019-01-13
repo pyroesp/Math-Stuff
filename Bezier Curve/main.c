@@ -2,54 +2,68 @@
 
 #include "bezier.h"
 
+#define SCREEN_WIDTH (200)
+#define SCREEN_HEIGHT (200)
+#define BG_COLOR (0xFF000000)
+
 /// Bezier Curve
 // https://giphy.com/gifs/curves-U9TTNMuIXwepa
 
 void print_Bezier(Bezier *b, uint8_t index){
-	printf("Bezier %d: 0x%X\n", index, b);
-	enum Direction dir;
-	uint8_t locked;
-	struct Bezier *parent[2];
+	char dir[5][8] = {"NONE", "DOWN", "UP", "RIGHT", "LEFT"};
+	printf("Bezier %d: 0x%X\n", index, (uint32_t)b);
 	printf("\tPoint [%f, %f]\n", b->p.x, b->p.y);
 	printf("\tm = %f ; b = %f\n", b->m, b->b);
-	printf("\tDir = %d\n", b->dir);
+	printf("\tDir = %s\n", dir[b->dir]);
 	printf("\tlocked = %d\n", b->locked);
-	printf("\tparent = [0x%X, 0x%X]\n", b->parent[0], b->parent[1]);
+	printf("\tparent = [0x%X, 0x%X]\n", (uint32_t)b->parent[0], (uint32_t)b->parent[1]);
+	if (b->parent[0] && b->parent[1])
+		printf("\tParent points [%f, %f] - [%f, %f]\n", b->parent[0]->p.x, b->parent[0]->p.y, b->parent[1]->p.x, b->parent[1]->p.y);
+}
+
+int triangle_number(int x){
+	int i;
+	int retval = 1;
+	for (i = x; i > 1; i--)
+		retval += i;
+	return retval;
 }
 
 int main(int argc, char *argv[]){
-	int i;
 	// Do SDL stuff
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 		return -1;
-	SDL_Window *w = SDL_CreateWindow("DameGame", 256, 256, 200, 200, SDL_WINDOW_SHOWN);
+	SDL_Window *w = SDL_CreateWindow("Bezier Curve", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
 	if (!w)
 		return -1;
 	SDL_Surface *ws = SDL_GetWindowSurface(w);
-	SDL_FillRect(ws, &ws->clip_rect, 0xFF000000);
+	SDL_FillRect(ws, &ws->clip_rect, BG_COLOR);
 	SDL_UpdateWindowSurface(w);
 
-	Point p[3] = {
-		{.x = 10, .y = 50},
-		{.x = 100, .y = 150},
-		{.x = 190, .y = 50}
+#define BEZ_SIZE (4)
+	uint8_t bezier_level = BEZ_SIZE;
+	Point p[BEZ_SIZE] = {
+		{.x = 10, .y = 100},
+		{.x = 70, .y = 50},
+		{.x = 130, .y = 150},
+		{.x = 190, .y = 100}
 	};
-
-	uint8_t bezier_level = 3;
-	uint8_t bezier_size = 6; // == 3!
+	int curve_size = 1;
+	Point *curve;
+	curve = (Point*)malloc(sizeof(Point));
+	uint8_t bezier_size = triangle_number(bezier_level);
 	Bezier *b[bezier_size];
-	b[0] = bezier_Create(1, p[0], NULL, NULL);
-	b[1] = bezier_Create(1, p[1], NULL, NULL);
-	b[2] = bezier_Create(1, p[2], NULL, NULL);
+	Bezier_Initialize(b, p, bezier_level);
+	memcpy(curve, &b[bezier_level - 1]->p, sizeof(Point));
 
-	b[3] = bezier_Create(0, b[0]->p, b[0], b[1]);
-	b[4] = bezier_Create(0, b[1]->p, b[1], b[2]);
-
-	b[5] = bezier_Create(0, b[3]->p, b[3], b[4]);
-
+	int i, j, offset;
+	int exit = 0;
 	float dist, temp;
 	SDL_Event e;
-	int exit = 0;
+
+	// Wait for window to open
+	SDL_Delay(1000);
+
 	while (!exit){
 		SDL_PollEvent(&e);
 		switch(e.type){
@@ -68,40 +82,44 @@ int main(int argc, char *argv[]){
 		}
 
 		// Clear screen
-		SDL_FillRect(ws, NULL, 0xFF000000);
+		SDL_FillRect(ws, NULL, BG_COLOR);
 
 		// Draw Bezier lines
-		for (i = 0; i < 2; i++){
-			bezier_DrawLine(ws, b[i], b[i + 1], 0xFFFF0000);
+		if (!b[bezier_size-1]->locked){
+			offset = 0;
+			for (i = 0; i < bezier_level - 1; i++){
+				for (j = 0; j < bezier_level - 1 - i; j++){
+					bezier_DrawLine(ws, b[j + offset], b[j + offset + 1], 0xFFFFFFFF);
+				}
+				offset += bezier_level - i;
+			}
 		}
 		// Draw Bezier dot
 		for (i = 0; i < bezier_size; i++){
-			print_Bezier(b[i], i);
-			bezier_DrawDot(ws, b[i], 0xFFFFFFFF);
+			bezier_DrawDot(ws, b[i], 0xFF00AAFF);
 		}
 
 		// Get longest distance to use to normalize the next step
-		dist = 0;
-		temp = 0;
+		dist = sqrt(pow((b[bezier_size - 1]->parent[1]->p.x - b[bezier_size - 1]->p.x), 2) +
+					pow((b[bezier_size - 1]->parent[1]->p.y - b[bezier_size - 1]->p.y), 2));
+
 		for (i = 0; i < bezier_size; i++){
-			if (!b[i]->locked && b[i]->parent[0] && b[i]->parent[1]){
-				temp = sqrt(pow((b[i]->parent[1]->p.x - b[i]->parent[0]->p.x), 2) +
-							pow((b[i]->parent[1]->p.y - b[i]->parent[0]->p.y), 2));
-				if (dist < temp)
-					dist = temp;
-			}
+			bezier_UpdatePoint(b[i], dist); // update point position
+			bezier_CheckPointToEnd(b[i]); // lock if point has reached end point
+			bezier_GetDirection(b[i]); // get direction to move
+			bezier_GetLinearEquation(b[i]); // get linear equation variables m and b from y = mx+b
 		}
 
-		// Update Bezier
-		for (i = 0; i < bezier_size; i++){
-			bezier_UpdatePoint(b[i], dist);
-			bezier_CheckPointToEnd(b[i]);
+		// Add points to curve array
+		if (!b[bezier_size - 1]->locked){
+			curve_size++;
+			curve = (Point*)realloc(curve, sizeof(Point) * curve_size);
+			memcpy(&curve[curve_size-1], &b[bezier_size - 1]->p, sizeof(Point));
 		}
-		// Get linear equation and direction after update
-		for (i = 0; i < bezier_size; i++){
-			bezier_GetLinearEquation(b[i]);
-			bezier_GetDirection(b[i]);
-		}
+
+		// Draw points of curve
+		for (i = 0; i < curve_size; i++)
+			draw_Pixel(ws, curve[i], 0xFFFF0000);
 
 		// Update window
 		SDL_UpdateWindowSurface(w);
@@ -111,6 +129,7 @@ int main(int argc, char *argv[]){
 
 	for (i = 0; i < bezier_size; i++)
 		bezier_Free(b[i]);
+	free(curve);
 
 	SDL_FreeSurface(ws);
 	SDL_DestroyWindow(w);
