@@ -1,72 +1,56 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <SDL2/SDL.h>
+
+#include "bezier.h"
 
 /// Bezier Curve
 // https://giphy.com/gifs/curves-U9TTNMuIXwepa
 
-typedef struct{
-	float x;
-	float y;
-}Point;
-
-typedef struct Bezier_Curve{
-	struct Bezier_Curve *next;
-	Point *p;
-	uint32_t size;
-}Bezier_Curve;
-
-Bezier_Curve* create_BezierCurvePoints(Point *p, uint32_t size);
-void print_BezierCurve(Bezier_Curve *bc);
-void update_BezierCurve(Bezier_Curve *bc);
-void draw_BezierCurvePoints(SDL_Surface *s, uint32_t pixel, uint32_t dot_size, Bezier_Curve *bc);
-void draw_BezierCurveLines(SDL_Surface *s, uint32_t pixel, Bezier_Curve *bc);
-
-void draw_pixel(SDL_Surface *s, Point p, uint32_t pixel);
-void draw_line(SDL_Surface *s, Point start, Point end, uint32_t pixel);
-void draw_dot(SDL_Surface *s, int size, Point p, uint32_t pixel);
-
+void print_Bezier(Bezier *b, uint8_t index){
+	printf("Bezier %d: 0x%X\n", index, b);
+	enum Direction dir;
+	uint8_t locked;
+	struct Bezier *parent[2];
+	printf("\tPoint [%f, %f]\n", b->p.x, b->p.y);
+	printf("\tm = %f ; b = %f\n", b->m, b->b);
+	printf("\tDir = %d\n", b->dir);
+	printf("\tlocked = %d\n", b->locked);
+	printf("\tparent = [0x%X, 0x%X]\n", b->parent[0], b->parent[1]);
+}
 
 int main(int argc, char *argv[]){
+	int i;
 	// Do SDL stuff
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 		return -1;
-	SDL_Window *w = SDL_CreateWindow("DameGame", 256, 256, 210, 210, SDL_WINDOW_SHOWN);
+	SDL_Window *w = SDL_CreateWindow("DameGame", 256, 256, 200, 200, SDL_WINDOW_SHOWN);
 	if (!w)
 		return -1;
 	SDL_Surface *ws = SDL_GetWindowSurface(w);
 	SDL_FillRect(ws, &ws->clip_rect, 0xFF000000);
 	SDL_UpdateWindowSurface(w);
 
-	#define point_size 4
-	Point point[point_size] = {
-		{
-			.x = 10,
-			.y = 30
-		},
-		{
-			.x = 20,
-			.y = 130
-		},
-		{
-			.x = 150,
-			.y = 150
-		},
-		{
-			.x = 180,
-			.y = 15
-		}
+	Point p[3] = {
+		{.x = 10, .y = 50},
+		{.x = 100, .y = 150},
+		{.x = 190, .y = 50}
 	};
 
-	Bezier_Curve *bc;
-	bc = create_BezierCurvePoints(point, point_size);
-	print_BezierCurve(bc);
-	printf("--------------------------------------\n");
+	uint8_t bezier_level = 3;
+	uint8_t bezier_size = 6; // == 3!
+	Bezier *b[bezier_size];
+	b[0] = bezier_Create(1, p[0], NULL, NULL);
+	b[1] = bezier_Create(1, p[1], NULL, NULL);
+	b[2] = bezier_Create(1, p[2], NULL, NULL);
 
+	b[3] = bezier_Create(0, b[0]->p, b[0], b[1]);
+	b[4] = bezier_Create(0, b[1]->p, b[1], b[2]);
+
+	b[5] = bezier_Create(0, b[3]->p, b[3], b[4]);
+
+	float dist, temp;
 	SDL_Event e;
 	int exit = 0;
+	int next_step = 1;
 	while (!exit){
 		SDL_PollEvent(&e);
 		switch(e.type){
@@ -75,186 +59,68 @@ int main(int argc, char *argv[]){
 					case SDLK_ESCAPE:
 						exit = 1;
 						break;
+					case SDLK_SPACE:
+						next_step = 1;
+						break;
 				}
+				break;
 			case SDL_QUIT:
 				exit = 1;
 				break;
+			default:
+				break;
 		}
 
-		SDL_FillRect(ws, NULL, 0xFF000000);
+		if (next_step == 1){
+			// Clear screen
+			SDL_FillRect(ws, NULL, 0xFF000000);
 
-		//printf("draw points\n");
-		draw_BezierCurvePoints(ws, 0xFFFFFFFF, 3, bc);
-		//SDL_UpdateWindowSurface(w);
-		//printf("draw lines\n");
-		draw_BezierCurveLines(ws, 0xFFFF0000, bc);
-		//SDL_UpdateWindowSurface(w);
-		//printf("update Bezier\n");
-		update_BezierCurve(bc);
+			// Draw Bezier lines
+			for (i = 0; i < 2; i++){
+				bezier_DrawLine(ws, b[i], b[i + 1], 0xFFFF0000);
+			}
+			// Draw Bezier dot
+			for (i = 0; i < bezier_size; i++){
+				print_Bezier(b[i], i);
+				bezier_DrawDot(ws, b[i], 0xFFFFFFFF);
+			}
 
-		SDL_UpdateWindowSurface(w);
+			// Get longest distance to use to normalize the next step
+			dist = 0;
+			temp = 0;
+			for (i = 0; i < bezier_size; i++){
+				if (!b[i]->locked && b[i]->parent[0] && b[i]->parent[1]){
+					temp = sqrt(pow((b[i]->parent[1]->p.x - b[i]->parent[0]->p.x), 2) +
+								pow((b[i]->parent[1]->p.y - b[i]->parent[0]->p.y), 2));
+					if (dist < temp)
+						dist = temp;
+				}
+			}
 
-		SDL_Delay(250);
+			// Update Bezier
+			for (i = 0; i < bezier_size; i++){
+				bezier_UpdatePoint(b[i], dist);
+				bezier_CheckPointToEnd(b[i]);
+			}
+			// Get linear equation and direction after update
+			for (i = 0; i < bezier_size; i++){
+				bezier_GetLinearEquation(b[i]);
+				bezier_GetDirection(b[i]);
+			}
+
+			// Update window
+			SDL_UpdateWindowSurface(w);
+
+			next_step = 0;
+		}
+		SDL_Delay(100);
 	}
+
+	for (i = 0; i < bezier_size; i++)
+		bezier_Free(b[i]);
 
 	SDL_FreeSurface(ws);
 	SDL_DestroyWindow(w);
 	SDL_Quit();
 	return 0;
-}
-
-
-Bezier_Curve* create_BezierCurvePoints(Point *p, uint32_t size){
-	Bezier_Curve *bc = NULL;
-	if (size > 0){
-		bc = (Bezier_Curve*)malloc(sizeof(Bezier_Curve));
-		bc->next = NULL;
-		bc->p = NULL;
-		bc->next = create_BezierCurvePoints(p, size-1);
-		bc->p = (Point*)malloc(sizeof(Point) * size);
-		memcpy(bc->p, p, sizeof(Point) * size);
-		bc->size = size;
-	}else{
-		return NULL;
-	}
-
-	return bc;
-}
-
-void print_BezierCurve(Bezier_Curve *bc){
-	Bezier_Curve *t = bc;
-	int i;
-	if (t){
-		printf("next = 0x%X\n", (unsigned int)t->next);
-		printf("size = %d\n", t->size);
-		for (i = 0; i < t->size; i++){
-			printf("p[%d] = (%0.2f, %0.2f)\n", i, t->p[i].x, t->p[i].y);
-		}
-		print_BezierCurve(bc->next);
-	}
-}
-
-void update_BezierCurve(Bezier_Curve *bc){
-	int i;
-	float max_len, temp, len, angle;
-	Bezier_Curve *current, *next;
-	Point *p1, *p2, v;
-	len = 0;
-	/// Check the length between the points on each level
-	/// of the Bezier Curve
-	/// Normalize each point movement to the longest length
-	current = bc;
-	next = bc->next;
-	while (next->size > 1){
-		for (i = 0; i < next->size - 1; i++){
-			p1 = &next->p[i+1];
-			p2 = &next->p[i];
-			temp = sqrt(pow(p1->x - p2->x, 2) + pow(p1->y - p2->y, 2));
-			if (temp > len)
-				max_len = temp;
-		}
-		current = next;
-		next = next->next;
-	}
-
-	current = bc;
-	next = bc->next;
-	while (next->size > 1){
-		for (i = 0; i < next->size; i++){
-			/// get 2 dots in current
-			p1 = &current->p[i+1];
-			p2 = &current->p[i];
-			/// calc length
-			len = sqrt(pow(p1->x - p2->x, 2) + pow(p1->y - p2->y, 2));
-			/// calc angle
-			// m = tan(theta) = (y2 - y1)/(x2 - x1)
-			angle = atan((p1->y - p2->y)/(p1->x - p2->x));
-			/// calc vector
-			v.x = len/max_len * cos(angle);
-			v.y = len/max_len * sin(angle);
-
-			next->p[i].x += v.x;
-			next->p[i].y += v.y;
-		}
-
-		current = next;
-		next = next->next;
-	}
-}
-
-void draw_BezierCurvePoints(SDL_Surface *s, uint32_t pixel, uint32_t dot_size, Bezier_Curve *bc){
-	int i;
-	Bezier_Curve *n;
-	n = bc;
-	while(1){
-		for (i = 0; i < n->size; i++){
-			draw_dot(s, dot_size, n->p[i], pixel);
-		}
-		if (n->size == 1)
-			break;
-		n = n->next;
-	}
-}
-
-void draw_BezierCurveLines(SDL_Surface *s, uint32_t pixel, Bezier_Curve *bc){
-	int i;
-	Bezier_Curve *n;
-	n = bc;
-	while(n->size > 1){
-		for (i = 0; i < n->size - 1; i++){
-			draw_line(s, n->p[i+1], n->p[i], pixel);
-		}
-		n = n->next;
-	}
-}
-
-void draw_pixel(SDL_Surface *s, Point p, uint32_t pixel){
-	uint32_t *tp = (uint32_t*)(((uint8_t *)s->pixels) + (int)p.y * s->pitch + (int)p.x * sizeof(*tp));
-	*tp = pixel;
-}
-
-void draw_line(SDL_Surface *s, Point start, Point end, uint32_t pixel){
-	SDL_Rect r;
-	Point p;
-	float m, b, offset;
-
-	if (end.x == start.x){ //vertical line
-		r.w = 1;
-		r.h = (int)(end.y - start.y);
-		r.x = (int)start.x;
-		r.y = (int)start.y;
-		SDL_FillRect(s, &r, pixel);
-	}else if (end.y == start.y){ //horizontal line
-		r.w = (int)(end.x - start.x);
-		r.h = 1;
-		r.x = (int)start.x;
-		r.y = (int)start.y;
-		SDL_FillRect(s, &r, pixel);
-	}else{
-		// y = mx + b
-		m = (end.y - start.y)/(end.x - start.x); // (30 - 130) / ( 10 - 20 ) = -100/-10 = 10
-		b = start.y - start.x * m;
-
-		if (start.x > end.x)
-			offset = -0.1;
-		else if (start.x < end.x)
-			offset = 0.1;
-		for (p.x = start.x; ceil(p.x) != floor(end.x); p.x += offset){
-			p.y = p.x * m + b;
-			draw_pixel(s, p, pixel);
-		}
-	}
-}
-
-void draw_dot(SDL_Surface *s, int size, Point p, uint32_t pixel){
-	if (size%2 == 0)
-		size++;
-
-	SDL_Rect r;
-	r.h = size;
-	r.w = size;
-	r.x = p.x - size/2;
-	r.y = p.y - size/2;
-
-	SDL_FillRect(s, &r, pixel);
 }
