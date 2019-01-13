@@ -8,7 +8,7 @@
 
 #include "draw.h"
 
-#define DOT_SIZE (3)
+#define DOT_SIZE (5)
 
 enum Direction {NONE, DOWN, UP, RIGHT, LEFT};
 
@@ -21,6 +21,7 @@ typedef struct Bezier{
 }Bezier;
 
 Bezier *bezier_Create(uint8_t locked, Point p, Bezier *mom, Bezier *dad);
+void Bezier_Initialize(Bezier **b, Point *p, uint8_t bezier_level);
 void bezier_SetPoint(Bezier *b, Point p);
 void bezier_GetLinearEquation(Bezier *b);
 void bezier_GetDirection(Bezier *b);

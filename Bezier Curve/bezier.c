@@ -17,6 +17,20 @@ Bezier *bezier_Create(uint8_t locked, Point p, Bezier *mom, Bezier *dad){
 	return b;
 }
 
+void Bezier_Initialize(Bezier **b, Point *p, uint8_t bezier_level){
+	int i, j;
+	int parent_offset = 0;
+	int bezier_offset = 0;
+	for (i = 0; i < bezier_level; i++){
+		if (i > 1)
+			parent_offset += bezier_level - (i - 2);
+		for (j = 0; j < bezier_level - i; j++){
+			b[j + bezier_offset] = bezier_Create(i == 0, p[j], i == 0 ? NULL : b[j + parent_offset], i == 0 ? NULL : b[j + parent_offset + 1]);
+		}
+		bezier_offset += bezier_level - i;
+	}
+}
+
 void bezier_SetPoint(Bezier *b, Point p){
 	if (!b)
 		return;
@@ -66,8 +80,8 @@ void bezier_UpdatePoint(Bezier *b, float toNormalize){
 	//      ___________________
 	// D = V(x2-x1)² + (y2-y1)²
 	float total_dist, dist;
-	total_dist = sqrt(pow((b->parent[1]->p.x - b->parent[0]->p.x),2) + 
-					pow((b->parent[1]->p.y - b->parent[0]->p.y), 2));
+	total_dist = sqrt(pow((b->parent[1]->p.x - b->p.x),2) +
+					pow((b->parent[1]->p.y - b->p.y), 2));
 	dist = total_dist/toNormalize;
 
 	switch (b->dir){
@@ -104,7 +118,7 @@ void bezier_CheckPointToEnd(Bezier *b){
 	//      ___________________
 	// D = V(x2-x1)² + (y2-y1)²
 	dist = sqrt(pow((b->parent[1]->p.x - b->p.x),2)  + pow((b->parent[1]->p.y - b->p.y), 2));
-	if (dist < 0.5)
+	if (dist <= 0.99f)
 		b->locked = 1;
 }
 
