@@ -1,0 +1,5 @@
+/Bezier\ Curve/bin/
+/Bezier\ Curve/obj/
+*.cbp
+*.depend
+*.layout
