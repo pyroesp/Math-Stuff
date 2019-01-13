@@ -39,7 +39,8 @@ void draw_Line(SDL_Surface *s, Point start, Point end, uint32_t pixel){
 			// Get Y position from X position and draw pixel, not efficient but works
 			for (p.x = start.x; (offset == 0.1f && p.x < end.x) || (offset == -0.1f && p.x > end.x); p.x += offset){
 				p.y = p.x * m + b;
-				draw_Pixel(s, p, pixel);
+				if ((p.y >= 0 && p.y <= s->h) && (p.x >= 0 && p.x <= s->w))
+					draw_Pixel(s, p, pixel);
 			}
 		}else if (width < height){
 			if (end.y > start.y)
@@ -49,7 +50,8 @@ void draw_Line(SDL_Surface *s, Point start, Point end, uint32_t pixel){
 			// Get X position from Y position and draw pixel, not efficient but works
 			for (p.y = start.y; (offset == 0.1f && p.y < end.y) || (offset == -0.1f && p.y > end.y); p.y += offset){
 				p.x = (p.y - b) / m;
-				draw_Pixel(s, p, pixel);
+				if ((p.y >= 0 && p.y <= s->h) && (p.x >= 0 && p.x <= s->w))
+					draw_Pixel(s, p, pixel);
 			}
 		}
 	}
