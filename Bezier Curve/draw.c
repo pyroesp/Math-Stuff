@@ -6,6 +6,7 @@ void draw_Pixel(SDL_Surface *s, Point p, uint32_t pixel){
 	*tp = pixel;
 }
 
+// Ugly but it works
 void draw_Line(SDL_Surface *s, Point start, Point end, uint32_t pixel){
 	SDL_Rect r;
 	Point p;
@@ -57,6 +58,7 @@ void draw_Line(SDL_Surface *s, Point start, Point end, uint32_t pixel){
 	}
 }
 
+// Dot is just a filled rectangle of equal width and height
 void draw_Dot(SDL_Surface *s, int size, Point p, uint32_t pixel){
 	if ((size % 2) == 0)
 		size++;

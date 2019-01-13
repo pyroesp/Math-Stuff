@@ -17,7 +17,7 @@ Bezier *bezier_Create(uint8_t locked, Point p, Bezier *mom, Bezier *dad){
 	return b;
 }
 
-void Bezier_Initialize(Bezier **b, Point *p, uint8_t bezier_level){
+void bezier_Initialize(Bezier **b, Point *p, uint8_t bezier_level){
 	int i, j;
 	int parent_offset = 0;
 	int bezier_offset = 0;
@@ -29,6 +29,27 @@ void Bezier_Initialize(Bezier **b, Point *p, uint8_t bezier_level){
 		}
 		bezier_offset += bezier_level - i;
 	}
+	/* Example of what happens in this function :
+	bezier_level == 4
+
+	@ i = 0 ; bezier_offset = 0; parent_offset = 0;
+	A. b[0] = Bezier *bezier_Create(0, p[0], NULL, NULL); // j = 0
+	B. b[1] = Bezier *bezier_Create(0, p[1], NULL, NULL); // j = 1
+	C. b[2] = Bezier *bezier_Create(0, p[2], NULL, NULL); // j = 2
+	D. b[3] = Bezier *bezier_Create(0, p[3], NULL, NULL); // j = 3
+
+	@ i = 1 ; bezier_offset = 4; parent_offset = 0;
+	E. b[0 + 4] = Bezier *bezier_Create(1, p[0], b[0 + 0], b[0 + 0 + 1]); // j = 0 | (A, B)
+	F. b[1 + 4] = Bezier *bezier_Create(1, p[1], b[1 + 0], b[1 + 0 + 1]); // j = 1 | (B, C)
+	G. b[2 + 4] = Bezier *bezier_Create(1, p[2], b[2 + 0], b[2 + 0 + 1]); // j = 2 | (C, D)
+
+	@ i = 2 ; bezier_offset = 7; parent_offset = 4;
+	H. b[0 + 7] = Bezier *bezier_Create(1, p[0], b[0 + 4], b[0 + 4 + 1]); // j = 0 | (E, F)
+	I. b[1 + 7] = Bezier *bezier_Create(1, p[1], b[1 + 4], b[1 + 4 + 1]); // j = 1 | (F, G)
+
+	@ i = 3 ; bezier_offset = 9; parent_offset = 7;
+	J. b[0 + 9] = Bezier *bezier_Create(1, p[0], b[0 + 7], b[0 + 7 + 1]); // j = 0 | (H, I)
+	*/
 }
 
 void bezier_SetPoint(Bezier *b, Point p){
@@ -55,9 +76,11 @@ void bezier_GetDirection(Bezier *b){
 	if (b->locked)
 		return;
 
+	// check width and height
 	width = fabs(b->parent[1]->p.x - b->parent[0]->p.x);
 	height = fabs(b->parent[1]->p.y - b->parent[0]->p.y);
 
+	// whatever is bigger determines the direction the point has to travel
 	if (width >= height){
 		if (b->parent[1]->p.x >= b->parent[0]->p.x)
 			b->dir = RIGHT;
@@ -76,6 +99,9 @@ void bezier_UpdatePoint(Bezier *b, float toNormalize){
 		return;
 	if (b->locked)
 		return;
+
+	// All points need to get to the destination at the same time
+	// that's why you normalize each step to last Bezier point (the one that follows the curve)
 
 	//      ___________________
 	// D = V(x2-x1)² + (y2-y1)²

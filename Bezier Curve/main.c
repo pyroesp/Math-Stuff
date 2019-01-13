@@ -40,6 +40,7 @@ int main(int argc, char *argv[]){
 	SDL_FillRect(ws, &ws->clip_rect, BG_COLOR);
 	SDL_UpdateWindowSurface(w);
 
+	// Initialize Bezier stuff
 #define BEZ_SIZE (4)
 	uint8_t bezier_level = BEZ_SIZE;
 	Point p[BEZ_SIZE] = {
@@ -53,7 +54,7 @@ int main(int argc, char *argv[]){
 	curve = (Point*)malloc(sizeof(Point));
 	uint8_t bezier_size = triangle_number(bezier_level);
 	Bezier *b[bezier_size];
-	Bezier_Initialize(b, p, bezier_level);
+	bezier_Initialize(b, p, bezier_level);
 	memcpy(curve, &b[bezier_level - 1]->p, sizeof(Point));
 
 	int i, j, offset;
@@ -64,17 +65,18 @@ int main(int argc, char *argv[]){
 	// Wait for window to open
 	SDL_Delay(1000);
 
+	// Get events
 	while (!exit){
 		SDL_PollEvent(&e);
 		switch(e.type){
 			case SDL_KEYUP:
 				switch(e.key.keysym.sym){
-					case SDLK_ESCAPE:
+					case SDLK_ESCAPE: // ESC key
 						exit = 1;
 						break;
 				}
 				break;
-			case SDL_QUIT:
+			case SDL_QUIT: // Close window
 				exit = 1;
 				break;
 			default:
@@ -99,10 +101,11 @@ int main(int argc, char *argv[]){
 			bezier_DrawDot(ws, b[i], 0xFF00AAFF);
 		}
 
-		// Get longest distance to use to normalize the next step
+		// Get distance from end point to last bezier point to use to normalize the next step
 		dist = sqrt(pow((b[bezier_size - 1]->parent[1]->p.x - b[bezier_size - 1]->p.x), 2) +
 					pow((b[bezier_size - 1]->parent[1]->p.y - b[bezier_size - 1]->p.y), 2));
 
+		// Bezier curve update stuff and co
 		for (i = 0; i < bezier_size; i++){
 			bezier_UpdatePoint(b[i], dist); // update point position
 			bezier_CheckPointToEnd(b[i]); // lock if point has reached end point
@@ -124,15 +127,18 @@ int main(int argc, char *argv[]){
 		// Update window
 		SDL_UpdateWindowSurface(w);
 
+		// Delay so it's not over before the window opens
 		SDL_Delay(100);
 	}
 
+	// free stuff before exit
 	for (i = 0; i < bezier_size; i++)
 		bezier_Free(b[i]);
 	free(curve);
 
 	SDL_FreeSurface(ws);
 	SDL_DestroyWindow(w);
+	// quit
 	SDL_Quit();
 	return 0;
 }
