@@ -12,3 +12,5 @@ Point F will follow the line DE from start to finish, but because point D and E 
 This is literally what's done in the C code.<br/>
 
 ![Alt Text](https://media.giphy.com/media/9Pi3Ad2EyzF3JKVcSa/giphy.gif)
+
+- Uses SDL2
