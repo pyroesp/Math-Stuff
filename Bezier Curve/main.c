@@ -22,10 +22,9 @@ void print_Bezier(Bezier *b, uint8_t index){
 }
 
 int triangle_number(int x){
-	int i;
 	int retval = 1;
-	for (i = x; i > 1; i--)
-		retval += i;
+	for (; x > 1; x--)
+		retval += x;
 	return retval;
 }
 
