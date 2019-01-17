@@ -13,7 +13,7 @@ This is literally what's done in the C code.<br/>
 
 ![Alt Text](https://media.giphy.com/media/9Pi3Ad2EyzF3JKVcSa/giphy.gif)
 
-Newer version : hhttps://imgur.com/C0ySh6R
+Newer version : https://imgur.com/C0ySh6R
 
 Use left mouse click to add a point and right mouse click to remove.
 When there are 3 points or more, the Bezier Curve starts automatically.
