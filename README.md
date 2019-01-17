@@ -13,4 +13,9 @@ This is literally what's done in the C code.<br/>
 
 ![Alt Text](https://media.giphy.com/media/9Pi3Ad2EyzF3JKVcSa/giphy.gif)
 
+Newer version : https://imgur.com/2bVRzRs
+
+Use left mouse click to add a point and right mouse click to remove.
+When there are 3 points or more, the Bezier Curve starts automatically.
+
 - Uses SDL2
