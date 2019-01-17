@@ -1,3 +1,7 @@
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
 #include "bezier.h"
 #include "draw.h"
 
