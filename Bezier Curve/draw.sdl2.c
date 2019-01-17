@@ -1,13 +1,18 @@
+#include <math.h>
+#include <SDL2/SDL.h>
+
 #include "draw.h"
 
 
-void draw_Pixel(SDL_Surface *s, Point p, uint32_t pixel){
+void draw_Pixel(void *surface, Point p, uint32_t pixel){
+	SDL_Surface *s = (SDL_Surface*)surface;
 	uint32_t *tp = (uint32_t*)(((uint8_t *)s->pixels) + (int)p.y * s->pitch + (int)p.x * sizeof(*tp));
 	*tp = pixel;
 }
 
 // Ugly but it works
-void draw_Line(SDL_Surface *s, Point start, Point end, uint32_t pixel){
+void draw_Line(void *surface, Point start, Point end, uint32_t pixel){
+	SDL_Surface *s = (SDL_Surface*)surface;
 	SDL_Rect r;
 	Point p;
 	float m, b, offset;
@@ -59,7 +64,8 @@ void draw_Line(SDL_Surface *s, Point start, Point end, uint32_t pixel){
 }
 
 // Dot is just a filled rectangle of equal width and height
-void draw_Dot(SDL_Surface *s, int size, Point p, uint32_t pixel){
+void draw_Dot(void *surface, int size, Point p, uint32_t pixel){
+	SDL_Surface *s = (SDL_Surface*)surface;
 	if ((size % 2) == 0)
 		size++;
 
