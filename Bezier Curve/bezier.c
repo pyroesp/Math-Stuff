@@ -1,4 +1,5 @@
 #include "bezier.h"
+#include "draw.h"
 
 Bezier *bezier_Create(uint8_t locked, Point p, Bezier *mom, Bezier *dad){
 	Bezier *b;
@@ -9,7 +10,7 @@ Bezier *bezier_Create(uint8_t locked, Point p, Bezier *mom, Bezier *dad){
 	b->b = 0;
 	b->locked = locked;
 	b->dir = NONE;
-	bezier_SetPoint(b, p);
+	bezier_SetPoint(&b->p, p);
 	b->parent[0] = mom;
 	b->parent[1] = dad;
 	bezier_GetLinearEquation(b);
@@ -52,11 +53,18 @@ void bezier_Initialize(Bezier **b, Point *p, uint8_t bezier_level){
 	*/
 }
 
-void bezier_SetPoint(Bezier *b, Point p){
-	if (!b)
+uint32_t bezier_TriangleNumber(uint32_t x){
+	uint32_t retval = x--;
+	for (; x > 0; x--)
+		retval += x;
+	return retval;
+}
+
+void bezier_SetPoint(Point *dest, Point src){
+	if (!dest)
 		return;
-	b->p.x = p.x;
-	b->p.y = p.y;
+	dest->x = src.x;
+	dest->y = src.y;
 }
 
 void bezier_GetLinearEquation(Bezier *b){
@@ -151,16 +159,16 @@ void bezier_CheckPointToEnd(Bezier *b){
 	}
 }
 
-void bezier_DrawDot(SDL_Surface *s, Bezier *b, uint32_t color){
-	if (!s || !b)
+void bezier_DrawDot(void *surface, Bezier *b, uint32_t color){
+	if (!surface || !b)
 		return;
-	draw_Dot(s, DOT_SIZE, b->p, color);
+	draw_Dot(surface, DOT_SIZE, b->p, color);
 }
 
-void bezier_DrawLine(SDL_Surface *s, Bezier *b1, Bezier *b2, uint32_t color){
-	if (!s || !b1 || !b2)
+void bezier_DrawLine(void *surface, Bezier *b1, Bezier *b2, uint32_t color){
+	if (!surface || !b1 || !b2)
 		return;
-	draw_Line(s, b1->p, b2->p, color);
+	draw_Line(surface, b1->p, b2->p, color);
 }
 
 void bezier_Free(Bezier *b){
