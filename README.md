@@ -15,7 +15,9 @@ This is literally what's done in the C code.<br/>
 
 Newer version : https://imgur.com/C0ySh6R
 
-Use left mouse click to add a point and right mouse click to remove.
-When there are 3 points or more, the Bezier Curve starts automatically.
+Use left mouse click to add a point and right mouse click to remove.<br/>
+When there are 3 points or more, the Bezier Curve starts automatically.<br/>
+
+Special thanks to Deetle from Twitch who helped me fix my mouse button issue during his stream and thought me about a faster way to add and remove elements in dynamic arrays.
 
 - Uses SDL2
