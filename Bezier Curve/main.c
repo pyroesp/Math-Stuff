@@ -1,6 +1,9 @@
+#include <stdlib.h>
 #include <stdio.h>
+#include <SDL2/SDL.h>
 
 #include "bezier.h"
+#include "draw.h"
 
 #define SCREEN_WIDTH (400)
 #define SCREEN_HEIGHT (400)
@@ -19,16 +22,15 @@
 #define BEZIER_HYST_LOW (8)
 
 /*
-
 Bezier, Cursor & Curve arrays
 	Arrays are dynamic, malloc'ed to a minimum value.
 	Size is increased every time the array is half full.
-	Size is decreased every time the array less than is 1/8 full.
+	Size is decreased every time the array is less than 1/8 full.
 */
 
 /// Bezier Curve
-// https://media.giphy.com/media/9Pi3Ad2EyzF3JKVcSa/giphy.gif
 
+// Used for debug struct
 void print_Bezier(Bezier *b, uint8_t index){
 	char dir[5][8] = {"NONE", "DOWN", "UP", "RIGHT", "LEFT"};
 	printf("Bezier %d: 0x%X\n", index, (uint32_t)b);
@@ -39,13 +41,6 @@ void print_Bezier(Bezier *b, uint8_t index){
 	printf("\tparent = [0x%X, 0x%X]\n", (uint32_t)b->parent[0], (uint32_t)b->parent[1]);
 	if (b->parent[0] && b->parent[1])
 		printf("\tParent points [%f, %f] - [%f, %f]\n", b->parent[0]->p.x, b->parent[0]->p.y, b->parent[1]->p.x, b->parent[1]->p.y);
-}
-
-int triangle_number(int x){
-	int retval = x--;
-	for (; x > 0; x--)
-		retval += x;
-	return retval;
 }
 
 int main(int argc, char *argv[]){
@@ -93,6 +88,7 @@ int main(int argc, char *argv[]){
 
 	// Get events
 	while (!exit){
+		// Get the return value of PollEvent to check if there's a new event
 		new_event = SDL_PollEvent(&e);
 		if (new_event){
 			switch(e.type){
@@ -155,7 +151,7 @@ int main(int argc, char *argv[]){
 			// Check if point update available
 			if (bezier_update_points){
 				bezier_level = cursor_current_pos;
-				bezier_size = triangle_number(bezier_level);
+				bezier_size = bezier_TriangleNumber(bezier_level);
 				// malloc / realloc Bezier structure
 				if (bezier_size >= bezier_max_size / BEZIER_HYST_HIGH){
 					bezier_max_size *= 2;
@@ -211,7 +207,7 @@ int main(int argc, char *argv[]){
 					curve_max_size *= CURVE_HYST_HIGH;
 					curve = (Point*)realloc(curve, sizeof(Point) * curve_max_size);
 				}
-				memcpy(&curve[curve_current_pos], &b[bezier_size - 1]->p, sizeof(Point));
+				bezier_SetPoint(&curve[curve_current_pos], b[bezier_size - 1]->p);
 				curve_current_pos++;
 			}else{
 				hide_cursor_dots = 1;
@@ -225,7 +221,7 @@ int main(int argc, char *argv[]){
 		// Update window
 		SDL_UpdateWindowSurface(w);
 
-		// Delay so it's not over before the window opens
+		// Small delay so you can see the updates
 		SDL_Delay(25);
 	}
 
