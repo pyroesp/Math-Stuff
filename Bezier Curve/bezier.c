@@ -144,8 +144,11 @@ void bezier_CheckPointToEnd(Bezier *b){
 	//      ___________________
 	// D = V(x2-x1)² + (y2-y1)²
 	dist = sqrt(pow((b->parent[1]->p.x - b->p.x),2)  + pow((b->parent[1]->p.y - b->p.y), 2));
-	if (dist <= 0.99f)
+	if (dist <= 0.99f){
 		b->locked = 1;
+		b->p.x = b->parent[1]->p.x;
+		b->p.y = b->parent[1]->p.y;
+	}
 }
 
 void bezier_DrawDot(SDL_Surface *s, Bezier *b, uint32_t color){
