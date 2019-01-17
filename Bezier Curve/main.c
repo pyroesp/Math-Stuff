@@ -146,7 +146,7 @@ int main(int argc, char *argv[]){
 
 		// Draw cursor dots
 		for (i = 0; i < cursor_current_pos && !hide_cursor_dots; i++)
-			draw_Dot(ws, DOT_SIZE, cursor[i], 0xFF00AAFF);
+			draw_Dot((void*)ws, DOT_SIZE, cursor[i], 0xFF00AAFF);
 
 		// Only execute Bezier if there are more than 2 points
 		if (cursor_current_pos > 2){
@@ -194,14 +194,14 @@ int main(int argc, char *argv[]){
 				offset = 0;
 				for (i = 0; i < bezier_level - 1; i++){
 					for (j = 0; j < bezier_level - 1 - i; j++){
-						bezier_DrawLine(ws, b[j + offset], b[j + offset + 1], 0xFFFFFFFF);
+						bezier_DrawLine((void*)ws, b[j + offset], b[j + offset + 1], 0xFFFFFFFF);
 					}
 					offset += bezier_level - i;
 				}
 
 				// Draw Bezier dots
 				for (i = 0; i < bezier_size; i++){
-					bezier_DrawDot(ws, b[i], 0xFF00AAFF);
+					bezier_DrawDot((void*)ws, b[i], 0xFF00AAFF);
 				}
 
 				// Add points from last Bezier point to curve array
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]){
 
 			// Draw points of curve
 			for (i = 0; i < curve_current_pos; i++)
-				draw_Pixel(ws, curve[i], 0xFFFF0000);
+				draw_Pixel((void*)ws, curve[i], 0xFFFF0000);
 		}
 
 		// Update window
